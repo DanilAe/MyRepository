@@ -1,3 +1,5 @@
+        //translate some text of C#
+        //Base of Yandex Translate
         public static string Translate(string textToTranslate, string lenguage1, string lenguage2)
         {
             string url = String.Format("https://translate.yandex.net/api/v1.5/tr/translate?key={3}&lang={0}-{1}&text={2}&format=html", lenguage1, lenguage2, textToTranslate, this.ApiKey);
