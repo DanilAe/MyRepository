@@ -5,6 +5,7 @@
 #include <QByteArray>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QCloseEvent>
 
 bool isChanged = false;
 QString pathtosave = "";
@@ -14,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->textEdit->setVisible(false);
     connect(ui->actionExit, SIGNAL(triggered()), this, SLOT(on_Exit()));
     connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(on_Open()));
     connect(ui->actionSave, SIGNAL(triggered()), this, SLOT(on_save()));
@@ -26,22 +28,46 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::closeEvent(QCloseEvent *evnt)
+{
+    if(pathtosave != "" && isChanged)
+    {
+        int result = QMessageBox::question(this,"Exit", "Do you want to save changes in " + pathtosave + " ?", QMessageBox::Abort | QMessageBox::Yes | QMessageBox::No);
+        if(result == QMessageBox::Yes)
+        {
+            QFile file(pathtosave);
+            file.open(QIODevice::WriteOnly);
+            QByteArray array;
+            array.append(ui->textEdit->toPlainText());
+            file.write(array);
+        }
+        else if (result == QMessageBox::Abort)
+        {
+            evnt->ignore();
+        }
+    }
+}
+
+
 void MainWindow::on_Exit()
 {
     if(pathtosave != "" && isChanged)
     {
         int result = QMessageBox::question(this,"Exit", "Do you want to save changes in " + pathtosave + " ?", QMessageBox::Abort | QMessageBox::Yes | QMessageBox::No);
-        qDebug() << "Clicked " + result;
-        if(result == 262144)
+        if(result == QMessageBox::Abort)
         {
             return;
         }
-        else if(result == 16384)
+        else if(result == QMessageBox::Yes)
         {
-            on_save();
+            QFile file(pathtosave);
+            file.open(QIODevice::WriteOnly);
+            QByteArray array;
+            array.append(ui->textEdit->toPlainText());
+            file.write(array);
         }
     }
-    QApplication::closeAllWindows();
+    QApplication::quit();
 }
 
 
@@ -80,6 +106,8 @@ void MainWindow::on_Open()
     text.append(a);
     ui->textEdit->setText(text);
     isChanged = false;
+    ui->textEdit->setVisible(true);
+    ui->statusBar->showMessage("File: " + pathtosave);
 }
 
 
@@ -105,18 +133,23 @@ void MainWindow::on_save()
 
 void MainWindow::on_save_as()
 {
-    QFileDialog* dialog = new QFileDialog();
-    dialog->setParent(this);
-    QString s = dialog->getSaveFileName(this,"Save as","/home/");
-    if(s.isEmpty())
-        return;
-    QFile file(s);
-    file.open(QIODevice::WriteOnly);
-    QByteArray array;
-    array.append(ui->textEdit->toPlainText());
-    file.write(array);
-    ui->statusBar->showMessage("Saved.");
-    isChanged = false;
+    if(ui->textEdit->isVisible())
+    {
+        QFileDialog* dialog = new QFileDialog();
+        dialog->setParent(this);
+        QString s = dialog->getSaveFileName(this,"Save as","/home/");
+        if(s.isEmpty())
+            return;
+        QFile file(s);
+        file.open(QIODevice::WriteOnly);
+        QByteArray array;
+        array.append(ui->textEdit->toPlainText());
+        file.write(array);
+        ui->statusBar->showMessage("Saved.");
+        isChanged = false;
+        if(pathtosave == "")
+            pathtosave = s;
+    }
 }
 
 void MainWindow::on_NewFile()
@@ -133,6 +166,7 @@ void MainWindow::on_NewFile()
             on_save();
         }
     }
+    ui->textEdit->setVisible(true);
     ui->textEdit->setText("");
     pathtosave = "";
     isChanged = false;
