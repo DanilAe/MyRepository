@@ -1,198 +1,376 @@
-#include "calcwidget.h"
-#include "ui_calcwidget.h"
-#include <QMessageBox>
-#include <calc.h>
+#include <QCoreApplication>
+#include <QList>
 #include <QDebug>
-#include <QKeyEvent>
+#include <calc.h>
+#include <num.h>
 
-CalcWidget::CalcWidget(QWidget *parent) :
-    QWidget(parent),
-    ui(new Ui::CalcWidget)
+double Calc::GetResult(double num_1, double num_2, QChar oper)
 {
-    ui->setupUi(this);
-    {
-        connect(ui->pushButton, SIGNAL(clicked()), this, SLOT(ButtonClicked()));
-        connect(ui->pushButton_2, SIGNAL(clicked()), this, SLOT(ButtonClicked()));
-        connect(ui->pushButton_3, SIGNAL(clicked()), this, SLOT(ButtonClicked()));
-        connect(ui->pushButton_5, SIGNAL(clicked()), this, SLOT(ButtonClicked()));
-        connect(ui->pushButton_6, SIGNAL(clicked()), this, SLOT(ButtonClicked()));
-        connect(ui->pushButton_8, SIGNAL(clicked()), this, SLOT(ButtonClicked()));
-        connect(ui->pushButton_9, SIGNAL(clicked()), this, SLOT(ButtonClicked()));
-        connect(ui->pushButton_10, SIGNAL(clicked()), this, SLOT(ButtonClicked()));
-        connect(ui->pushButton_12, SIGNAL(clicked()), this, SLOT(ButtonClicked()));
-        connect(ui->pushButton_13, SIGNAL(clicked()), this, SLOT(ButtonClicked()));
-        connect(ui->pushButton_4, SIGNAL(clicked()), this, SLOT(Clicked_Arephmetick_Symbol()));
-        connect(ui->pushButton_7, SIGNAL(clicked()), this, SLOT(Clicked_Arephmetick_Symbol()));
-        connect(ui->pushButton_11, SIGNAL(clicked()), this, SLOT(Clicked_Arephmetick_Symbol()));
-        connect(ui->pushButton_15, SIGNAL(clicked()), this, SLOT(Clicked_Arephmetick_Symbol()));
-    }
-}
-int clickedCount = 1;
-Calc calc;
-
-CalcWidget::~CalcWidget()
-{
-    delete ui;
+    double result = oper == PLUS ? num_1 + num_2 : oper == MINUS ? num_1 - num_2 : oper == MUL ? num_1 * num_2 : num_1 / num_2;
+    qDebug() << "GetResult(" << num_1 << ", " << num_2 << ", " << oper << ") = " << result;
+    return result;
 }
 
-void CalcWidget::keyPressEvent(QKeyEvent *event)
+
+double Calc::StartAnalize_GetResult(QString str)
 {
-    bool ok;
-    event->text().toInt(&ok);
-    if(ok && (event->text() != PLUS && event->text() != MINUS && event->text() != MUL && event->text() != DIV))
+    qDebug() << "\nAnalize: " << str;
+    double result = 0;
+    int count = 0;
+    QString num = "";
+    QChar oper;
+    if(str.contains("+-"))
+        str = str.replace("+-", "-");
+    if(str.contains("--"))
+        str = str.replace("--","+");
+    QString s = (str + "$");
+    for(int i = 0; i < s.length(); i++)
     {
-        qDebug() << "ok";
-        if(ui->label->text() == "0")
+        switch (s[i].unicode())
         {
-            ui->label->setText(event->text());
-        }
-        else
+        case PLUS:
+            if(num != "")
+                count == 0 ? result = num.toDouble() : result = GetResult(result, num.toDouble(), oper);
+            num = "";
+            count++;
+            oper = PLUS;
+            break;
+        case MINUS:
+            if(num != "")
+                count == 0 ? result = num.toDouble() : result = GetResult(result, num.toDouble(), oper);
+            num = "";
+            count++;
+            oper = MINUS;
+            break;
+        case MUL:
+            if(num != "")
+                count == 0 ? result = num.toDouble() : result = GetResult(result, num.toDouble(), oper);
+            num = "";
+            count++;
+            oper = MUL;
+            break;
+        case DIV:
+            if(num != "")
+                count == 0 ? result = num.toDouble() : result = GetResult(result, num.toDouble(), oper);
+            num = "";
+            count++;
+            oper = DIV;
+            break;
+        case BRACKET:
         {
-            ui->label->setText(ui->label->text() + event->text());
-        }
-    }
-    else if(!ok &&! (event->text() != PLUS && event->text() != MINUS && event->text() != MUL && event->text() != DIV))
-    {
-        qDebug() << "!ok";
-        QString l = ui->label_2->text();
-        int len = l.length();
-        if(!ui->label_2->text().endsWith("+") && !ui->label_2->text().endsWith("-") && !ui->label_2->text().endsWith("÷") && !ui->label_2->text().endsWith("*"))
-        {
-            QString str;
-            QString text = (!ui->label->text().endsWith(".") ? ui->label->text() : ui->label->text() + "0");
-            bool b = text.startsWith("-") && ((ui->label_2->text().endsWith("*")) || (ui->label_2->text().endsWith("÷")));
-            str = (b ? ui->label_2->text() + "(" + text + ")" : ui->label_2->text()  + text);
-            ui->label_2->setText(str + event->text());
-            ui->label->setText("0");
-        }
-        else
-        {
-            QString label;
-            for(int i = 0; i < len;i++)
+            QString expr = "";
+            for(int k = ++i; s[k] != ')'; k++)
             {
-                label.append(ui->label_2->text()[i]);
+                expr.append(s[k]);
+                i++;
             }
-            QString str;
-            QString text = (!ui->label->text().endsWith(".") ? ui->label->text() : ui->label->text() + "0");
-            bool b = text.startsWith("-") && ((ui->label_2->text().endsWith("*")) || (ui->label_2->text().endsWith("÷")));
-            str = (b ? ui->label_2->text() + "(" + text + ")" : ui->label_2->text()  + text);
-            if(clickedCount % 2 == 0 || ++clickedCount % 2 == 0)
-            {
-                ui->label_2->setText(QString::number(calc.StartAnalize_GetResult(str.replace("÷","/"))) + event->text());
-            }
-            else
-            {
-                ui->label_2->setText(str + event->text());
-            }
-            ui->label->setText("0");
-        }
-        clickedCount++;
-    }
-}
-
-void CalcWidget::ButtonClicked()
-{
-    QPushButton* clicked = (QPushButton*)sender();
-    if(ui->label->text() == "0")
-    {
-        ui->label->setText(clicked->text());
-    }
-    else
-    {
-        ui->label->setText(ui->label->text() + clicked->text());
-    }
-}
-
-void CalcWidget::on_Clear_clicked()
-{
-    ui->label->setText("0");
-    clickedCount = 1;
-    ui->label_2->setText("");
-}
-
-void CalcWidget::Clicked_Arephmetick_Symbol()
-{
-    qDebug() << clickedCount;
-    QPushButton* clicked = (QPushButton*)sender();
-    QString l = ui->label_2->text();
-    int len = l.length();
-    if(!ui->label_2->text().endsWith("+") && !ui->label_2->text().endsWith("-") && !ui->label_2->text().endsWith("÷") && !ui->label_2->text().endsWith("*"))
-    {
-        QString str;
-        QString text = (!ui->label->text().endsWith(".") ? ui->label->text() : ui->label->text() + "0");
-        bool b = text.startsWith("-") && ((ui->label_2->text().endsWith("*")) || (ui->label_2->text().endsWith("÷")));
-        str = (b ? ui->label_2->text() + "(" + text + ")" : ui->label_2->text()  + text);
-            ui->label_2->setText(str + clicked->text());
-        ui->label->setText("0");
-    }
-    else
-    {
-        QString label;
-        for(int i = 0; i < len;i++)
-        {
-            label.append(ui->label_2->text()[i]);
-        }
-        QString str;
-        QString text = (!ui->label->text().endsWith(".") ? ui->label->text() : ui->label->text() + "0");
-        bool b = text.startsWith("-") && ((ui->label_2->text().endsWith("*")) || (ui->label_2->text().endsWith("÷")));
-        str = (b ? ui->label_2->text() + "(" + text + ")" : ui->label_2->text()  + text);
-        if(clickedCount % 2 == 0 || ++clickedCount % 2 == 0)
-            ui->label_2->setText(QString::number(calc.StartAnalize_GetResult(str.replace("÷","/"))) + clicked->text());
-        else
-            ui->label_2->setText(str + clicked->text());
-        ui->label->setText("0");
-    }
-    clickedCount++;
-    qDebug() << clickedCount;
-}
-
-void CalcWidget::on_GetResult_Button_clicked()
-{
-    if(ui->label->text() == "0" && ui->label_2->text() == "")
+            i--;
+            count == 0 ? result = num.    if(ui->label->text() == "0" && ui->label_2->text() == "")
+272
         return;
+273
     if(ui->label_2->text() == "" && ui->label->text() != "0")
+274
     {
+275
         Calc calc;
+276
         ui->label->setText(QString::number(calc.GetResult(0, ui->label->text().toDouble(), '+')));
+277
     }
+278
     else
+279
     {
+280
         QString str;
+281
         QString label = (!ui->label->text().endsWith(".") ? ui->label->text() : ui->label->text() + "0");
+282
         bool b = label.startsWith("-") && ((ui->label_2->text().endsWith("*")) || (ui->label_2->text().endsWith("÷")));
+283
         str = (b ? ui->label_2->text() + "(" + label + ")" : ui->label_2->text()  + label);
+284
         str = str.replace("÷", "/");
+285
         ui->label->setText(QString::number(calc.StartAnalize_GetResult(str)));
+286
         ui->label_2->setText("");
+287
     }
+288
 }
-
+289
+​
+290
 void CalcWidget::on_pushButton_14_clicked()
+291
 {
+292
     double num = ui->label->text().toDouble();
+293
     ui->label->setText(QString::number(num * -1, 'g', 10));
+294
 }
-
+295
+​
+296
 void CalcWidget::on_pushButton_Point_clicked()
+297
 {
+298
     if(!ui->label->text().contains("."))
+299
         ui->label->setText(ui->label->text() + ".");
+300
 }
-
-
+301
+​
+302
+​
+303
 void CalcWidget::on_pushButton_16_clicked()
+304
 {
+305
     ui->label->setText(QString::number(ui->label->text().toDouble() / 100));
+306
 }
-
+307
+​
+308
 void CalcWidget::on_pushButton_17_clicked()
+309
 {
+310
     if(ui->label_2->text().endsWith("+") || ui->label_2->text().endsWith("-") || ui->label_2->text().endsWith("/") || ui->label_2->text().endsWith("*") || (ui->label->text() == "0"))
+311
     {
+312
         if(ui->label->text() == "0")
+313
              ui->label->setText("3.1415");
+314
         else
+315
             ui->label->setText(ui->label->text() + "3.1415");
+316
+    }    if(ui->label->text() == "0" && ui->label_2->text() == "")
+272
+        return;
+273
+    if(ui->label_2->text() == "" && ui->label->text() != "0")
+274
+    {
+275
+        Calc calc;
+276
+        ui->label->setText(QString::number(calc.GetResult(0, ui->label->text().toDouble(), '+')));
+277
     }
+278
+    else
+279
+    {
+280
+        QString str;
+281
+        QString label = (!ui->label->text().endsWith(".") ? ui->label->text() : ui->label->text() + "0");
+282
+        bool b = label.startsWith("-") && ((ui->label_2->text().endsWith("*")) || (ui->label_2->text().endsWith("÷")));
+283
+        str = (b ? ui->label_2->text() + "(" + label + ")" : ui->label_2->text()  + label);
+284
+        str = str.replace("÷", "/");
+285
+        ui->label->setText(QString::number(calc.StartAnalize_GetResult(str)));
+286
+        ui->label_2->setText("");
+287
+    }
+288
+}
+289
+​
+290
+void CalcWidget::on_pushButton_14_clicked()
+291
+{
+292
+    double num = ui->label->text().toDouble();
+293
+    ui->label->setText(QString::number(num * -1, 'g', 10));
+294
+}
+295
+​
+296
+void CalcWidget::on_pushButton_Point_clicked()
+297
+{
+298
+    if(!ui->label->text().contains("."))
+299
+        ui->label->setText(ui->label->text() + ".");
+300
+}
+301
+​
+302
+​
+303
+void CalcWidget::on_pushButton_16_clicked()
+304
+{
+305
+    ui->label->setText(QString::number(ui->label->text().toDouble() / 100));
+306
+}
+307
+​
+308
+void CalcWidget::on_pushButton_17_clicked()
+309
+{
+310
+    if(ui->label_2->text().endsWith("+") || ui->label_2->text().endsWith("-") || ui->label_2->text().endsWith("/") || ui->label_2->text().endsWith("*") || (ui->label->text() == "0"))
+311
+    {
+312
+        if(ui->label->text() == "0")
+313
+             ui->label->setText("3.1415");
+314
+        else
+315
+            ui->label->setText(ui->label->text() + "3.1415");
+316
+    }
+317
+}
+318
+​
+319
+
+317
+}
+318
+​
+319
+toDouble() : result = GetResult(result, StartAnalize_GetResult(expr), oper);;
+            qDebug() << "\nContinue A    if(ui->label->text() == "0" && ui->label_2->text() == "")
+272
+        return;
+273
+    if(ui->label_2->text() == "" && ui->label->text() != "0")
+274
+    {
+275
+        Calc calc;
+276
+        ui->label->setText(QString::number(calc.GetResult(0, ui->label->text().toDouble(), '+')));
+277
+    }
+278
+    else
+279
+    {
+280
+        QString str;
+281
+        QString label = (!ui->label->text().endsWith(".") ? ui->label->text() : ui->label->text() + "0");
+282
+        bool b = label.startsWith("-") && ((ui->label_2->text().endsWith("*")) || (ui->label_2->text().endsWith("÷")));
+283
+        str = (b ? ui->label_2->text() + "(" + label + ")" : ui->label_2->text()  + label);
+284
+        str = str.replace("÷", "/");
+285
+        ui->label->setText(QString::number(calc.StartAnalize_GetResult(str)));
+286
+        ui->label_2->setText("");
+287
+    }
+288
+}
+289
+​
+290
+void CalcWidget::on_pushButton_14_clicked()
+291
+{
+292
+    double num = ui->label->text().toDouble();
+293
+    ui->label->setText(QString::number(num * -1, 'g', 10));
+294
+}
+295
+​
+296
+void CalcWidget::on_pushButton_Point_clicked()
+297
+{
+298
+    if(!ui->label->text().contains("."))
+299
+        ui->label->setText(ui->label->text() + ".");
+300
+}
+301
+​
+302
+​
+303
+void CalcWidget::on_pushButton_16_clicked()
+304
+{
+305
+    ui->label->setText(QString::number(ui->label->text().toDouble() / 100));
+306
+}
+307
+​
+308
+void CalcWidget::on_pushButton_17_clicked()
+309
+{
+310
+    if(ui->label_2->text().endsWith("+") || ui->label_2->text().endsWith("-") || ui->label_2->text().endsWith("/") || ui->label_2->text().endsWith("*") || (ui->label->text() == "0"))
+311
+    {
+312
+        if(ui->label->text() == "0")
+313
+             ui->label->setText("3.1415");
+314
+        else
+315
+            ui->label->setText(ui->label->text() + "3.1415");
+316
+    }
+317
+}
+318
+​
+319
+nalize: " << str;
+            if( i >= s.length() || s[++i] == '$')
+                return result;
+            count++;
+            break;
+        }
+        case END:
+            if(num != "")
+                result = GetResult(result, num.toDouble(), oper);
+            count++;
+            break;
+        default:
+            num += s[i];
+            break;
+        }
+    }
+    qDebug() << "Result = " << result;
+    return result;
 }
 
