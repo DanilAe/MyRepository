@@ -10,7 +10,8 @@ void Widget::GetTranslate(QString text)
     QString args[2];
     args[0] = apikey;
     args[1] = text;
-    QString url = format("https://translate.yandex.net/api/v1.5/tr/translate?key={0}&lang=ru-en&text={1}&format=html",args,2);
+    QString url = "https://translate.yandex.net/api/v1.5/tr/translate?key=%1&lang=ru-en&text=%2&format=html";
+    url = url.arg(apikey).arg(text);
     qDebug() << url;
     manager = new QNetworkAccessManager();
     reply = manager->get(QNetworkRequest(QUrl(url)));
@@ -30,12 +31,3 @@ void Widget::replyfinished()
     ui->plainTextEdit_2->setPlainText(el.text());
 }
 
-QString Widget::format(const QString format, const QString args[], const int count)
-{
-    QString str = format;
-    for(int i = 0; i < count;i++)
-    {
-        str = str.replace("{" + QString::number(i) + "}", args[i]);
-    }
-    return str;
-}
